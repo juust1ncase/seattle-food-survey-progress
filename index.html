@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seattle Industry Survey — Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0b09; --surface: #141210; --faint: #1c1916; --faint2: #222018;
+  --warm: #e8e0d0; --cream: #c8b99a; --muted: #6b6055; --rule: #2a2420;
+  --amber: #c8860a; --rust: #b03a1e; --teal: #3a7a8a; --sage: #4a7a5e;
+  --fav: #c8860a; --gem: #3a7a8a;
+  --boh: #b06030; --foh: #4a7a5e; --owner: #7a4a6e;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--warm); font-family:'Courier Prime',monospace; min-height:100vh; }
+
+/* HEADER */
+.header {
+  padding: 36px 48px 24px;
+  border-bottom: 1px solid var(--rule);
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: end; gap: 24px;
+}
+.header-left h1 {
+  font-family:'Cormorant Garamond',serif;
+  font-size: clamp(24px,3.5vw,42px);
+  font-weight:300; line-height:1.05; color:var(--warm);
+}
+.header-left h1 em { font-style:italic; color:var(--cream); }
+.header-sub {
+  font-size:9px; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--muted); margin-top:8px;
+}
+.header-stats { display:flex; gap:32px; }
+.stat { text-align:center; }
+.stat-n {
+  font-family:'Cormorant Garamond',serif;
+  font-size:36px; font-weight:300; color:var(--amber); line-height:1; display:block;
+}
+.stat-l { font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+
+/* FILTERS */
+.filters {
+  padding:16px 48px; border-bottom:1px solid var(--rule);
+  display:flex; gap:32px; flex-wrap:wrap; align-items:center;
+}
+.filter-group { display:flex; flex-direction:column; gap:5px; }
+.filter-label { font-size:8px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+.filter-row { display:flex; gap:4px; flex-wrap:wrap; }
+.fb {
+  background:var(--faint); border:1px solid #333; color:#5a5248;
+  font-family:'Courier Prime',monospace; font-size:8px; letter-spacing:.08em;
+  text-transform:uppercase; padding:5px 10px; cursor:pointer;
+  transition:all .15s; border-radius:1px;
+}
+.fb:hover { border-color:var(--cream); color:var(--cream); }
+.fb.on { background:var(--amber); border-color:var(--amber); color:#080604; font-weight:700; }
+.fb.on.foh { background:var(--foh); border-color:var(--foh); color:#fff; }
+.fb.on.boh { background:var(--boh); border-color:var(--boh); color:#fff; }
+.fb.on.owner { background:var(--owner); border-color:var(--owner); color:#fff; }
+
+/* MAIN GRID */
+.main { display:grid; grid-template-columns:1fr 1fr; }
+
+/* PANEL */
+.panel { padding:32px 40px; border-right:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.panel:nth-child(2n) { border-right:none; }
+.panel-eye { font-size:8px; letter-spacing:.22em; text-transform:uppercase; margin-bottom:5px; }
+.panel-title {
+  font-family:'Cormorant Garamond',serif; font-size:clamp(18px,2.2vw,26px);
+  font-weight:300; color:var(--warm); line-height:1.1; margin-bottom:4px;
+}
+.rule { height:1px; background:var(--rule); margin:14px 0; }
+.rule.c { background:currentColor; opacity:.3; }
+
+/* BAR CHART */
+.bars { display:flex; flex-direction:column; gap:5px; }
+.bar-row { display:grid; grid-template-columns:20px 1fr 28px; align-items:center; gap:7px; }
+.bar-rank { font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--muted); text-align:right; }
+.bar-wrap { position:relative; height:18px; }
+.bar-bg { position:absolute; inset:0; background:var(--faint); }
+.bar-fg { position:absolute; top:0; left:0; height:100%; width:0%; transition:width .8s cubic-bezier(.4,0,.2,1); }
+.bar-lbl {
+  position:absolute; top:50%; left:7px; transform:translateY(-50%);
+  font-size:8px; letter-spacing:.06em; text-transform:uppercase;
+  color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  max-width:87%; z-index:1; mix-blend-mode:difference; font-weight:700;
+}
+.bar-pts { font-size:9px; color:var(--muted); text-align:right; }
+
+/* ROLE BREAKDOWN */
+.role-block { margin-bottom:12px; }
+.role-hdr { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+.rdot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+.rlbl { font-size:8px; letter-spacing:.15em; text-transform:uppercase; color:var(--cream); }
+.rn { font-size:7px; color:var(--muted); margin-left:auto; }
+.rpicks { display:flex; flex-wrap:wrap; gap:3px; padding-left:14px; }
+.rtag { font-size:8px; letter-spacing:.03em; padding:2px 8px; border:1px solid; border-radius:1px; white-space:nowrap; }
+
+/* CROSSOVER */
+.ov-list { display:flex; flex-direction:column; gap:7px; }
+.ov-item {
+  display:grid; grid-template-columns:1fr 60px 60px;
+  align-items:center; gap:8px;
+  padding:10px 12px; background:var(--faint);
+  border-left:2px solid var(--amber);
+}
+.ov-name { font-size:12px; color:var(--warm); }
+.ov-sub { font-size:8px; color:var(--muted); letter-spacing:.06em; margin-top:1px; }
+.ov-col { text-align:center; }
+.ov-pts { font-family:'Cormorant Garamond',serif; font-size:20px; font-weight:300; }
+.ov-lbl { font-size:7px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+/* INSIGHT BOXES */
+.insight { background:var(--faint2); border-left:2px solid var(--amber); padding:10px 14px; margin-top:14px; }
+.insight-txt { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:11px; color:var(--cream); line-height:1.6; }
+
+/* EXP TABLE */
+.exp-table { width:100%; border-collapse:collapse; }
+.exp-table th { font-size:7px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); padding:0 0 8px; text-align:left; border-bottom:1px solid var(--rule); }
+.exp-table td { padding:8px 0; border-bottom:1px solid var(--faint); font-size:9px; vertical-align:top; }
+.exp-table tr:last-child td { border-bottom:none; }
+.exp-lbl { color:var(--cream); letter-spacing:.05em; }
+.exp-n { color:var(--muted); font-size:8px; }
+.exp-picks { color:var(--amber); line-height:1.7; }
+
+/* QUOTES PANEL */
+.quotes-panel { grid-column:1/-1; padding:32px 40px; border-bottom:1px solid var(--rule); }
+.quotes-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:16px; margin-top:16px; }
+.quote-card {
+  background:var(--faint); padding:16px 18px;
+  border-top:2px solid var(--rule);
+  display:flex; flex-direction:column; gap:10px;
+}
+.quote-card.highlight { border-top-color:var(--amber); }
+.quote-card.gem-q { border-top-color:var(--gem); }
+.quote-txt {
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:12px; color:var(--cream); line-height:1.7;
+}
+.quote-meta { font-size:7.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+/* FULL LIST PANEL */
+.list-panel { grid-column:1/-1; padding:32px 40px; border-bottom:1px solid var(--rule); }
+.list-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:3px; margin-top:16px; }
+.list-item {
+  padding:5px 8px; background:var(--faint); font-size:9px;
+  color:var(--muted); letter-spacing:.04em; display:flex; justify-content:space-between; align-items:center;
+}
+.list-item.top-fav { color:var(--fav); background:#1e1608; }
+.list-item.top-gem { color:var(--gem); background:#081418; }
+.list-item.crossover { color:#b8960c; background:#1a1608; }
+.list-pts { font-size:7px; opacity:.7; }
+
+/* FOOTER */
+.footer {
+  padding:18px 48px; display:flex; justify-content:space-between;
+  font-size:8px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+}
+
+/* FILTER STATUS */
+.filter-status {
+  padding:10px 48px; background:var(--faint2); border-bottom:1px solid var(--rule);
+  font-size:9px; color:var(--amber); letter-spacing:.1em;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.filter-insight-txt { font-family:'Cormorant Garamond',serif; font-style:italic; color:var(--cream); font-size:11px; }
+
+@media(max-width:768px){
+  .header { grid-template-columns:1fr; padding:24px 20px 16px; }
+  .header-stats { justify-content:flex-start; }
+  .main { grid-template-columns:1fr; }
+  .panel { border-right:none; padding:24px 20px; }
+  .panel:nth-child(2n) { border-right:none; }
+  .filters { padding:14px 20px; gap:16px; }
+  .quotes-panel,.list-panel,.footer,.filter-status { padding-left:20px; padding-right:20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Named by the people<br>who <em>feed this city.</em></h1>
+    <div class="header-sub">Seattle Industry Survey · Spring 2026 · @justinmkimphoto · progress update</div>
+  </div>
+  <div class="header-stats">
+    <div class="stat"><span class="stat-n" id="hn">57</span><span class="stat-l">responses</span></div>
+    <div class="stat"><span class="stat-n" id="hr">214</span><span class="stat-l">restaurants named</span></div>
+    <div class="stat"><span class="stat-n">3·2·1</span><span class="stat-l">point system</span></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <div class="filter-label">Role</div>
+    <div class="filter-row" id="rf">
+      <button class="fb on" onclick="setF('role','all',this)">All</button>
+      <button class="fb foh" onclick="setF('role','FOH',this)">FOH</button>
+      <button class="fb boh" onclick="setF('role','BOH',this)">BOH</button>
+      <button class="fb owner" onclick="setF('role','Owner/GM',this)">Owners / GMs</button>
+    </div>
+  </div>
+  <div class="filter-group">
+    <div class="filter-label">Experience</div>
+    <div class="filter-row" id="ef">
+      <button class="fb on" onclick="setF('exp','all',this)">All</button>
+      <button class="fb" onclick="setF('exp','Veteran (11+ yrs)',this)">11+ yrs</button>
+      <button class="fb" onclick="setF('exp','Mid (4–10 yrs)',this)">4–10 yrs</button>
+      <button class="fb" onclick="setF('exp','Newer (1–3 yrs)',this)">1–3 yrs</button>
+    </div>
+  </div>
+  <div class="filter-group">
+    <div class="filter-label">Seattle Tenure</div>
+    <div class="filter-row" id="sf">
+      <button class="fb on" onclick="setF('sea','all',this)">All</button>
+      <button class="fb" onclick="setF('sea','Long-term (11+ yrs)',this)">11+ yrs</button>
+      <button class="fb" onclick="setF('sea','Mid (4–10 yrs)',this)">4–10 yrs</button>
+      <button class="fb" onclick="setF('sea','Newer (1–3 yrs)',this)">1–3 yrs</button>
+    </div>
+  </div>
+</div>
+
+<div class="filter-status">
+  <span id="fs-label">All roles · All experience · All Seattle tenure · n=57</span>
+  <span class="filter-insight-txt" id="fs-insight">Survey closes Wednesday. Results are live as of today.</span>
+</div>
+
+<div class="main">
+  <!-- FAVORITES -->
+  <div class="panel">
+    <div class="panel-eye" style="color:var(--fav)">Category 01 · Favorites</div>
+    <div class="panel-title" id="fav-title">Seattle's Favorite Restaurants</div>
+    <div class="rule c" style="color:var(--fav)"></div>
+    <div class="bars" id="fav-bars"></div>
+  </div>
+
+  <!-- HIDDEN GEMS -->
+  <div class="panel">
+    <div class="panel-eye" style="color:var(--gem)">Category 02 · Hidden Gems</div>
+    <div class="panel-title" id="gem-title">Seattle's Hidden Gems</div>
+    <div class="rule c" style="color:var(--gem)"></div>
+    <div class="bars" id="gem-bars"></div>
+  </div>
+
+  <!-- ROLE BREAKDOWN -->
+  <div class="panel">
+    <div class="panel-eye" style="color:var(--cream)">By Role</div>
+    <div class="panel-title">What each part of the house picks</div>
+    <div class="rule"></div>
+    <div id="role-breakdown"></div>
+  </div>
+
+  <!-- CROSSOVER -->
+  <div class="panel">
+    <div class="panel-eye" style="color:var(--cream)">Crossover</div>
+    <div class="panel-title">Named on both lists</div>
+    <div class="rule"></div>
+    <div class="ov-list" id="ov-list"></div>
+    <div class="insight" style="margin-top:16px">
+      <div class="insight-txt">Three restaurants appear in the top 20 of both lists. L'Oursin leads overall with 23 combined points — beloved but apparently not overexposed.</div>
+    </div>
+  </div>
+
+  <!-- EXPERIENCE -->
+  <div class="panel">
+    <div class="panel-eye" style="color:var(--cream)">By Experience Level</div>
+    <div class="panel-title">Do veterans pick differently?</div>
+    <div class="rule"></div>
+    <table class="exp-table" id="exp-table">
+      <thead><tr><th>Group</th><th>n</th><th>Top Favorites</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="insight">
+      <div class="insight-txt" id="exp-insight">"Veterans (11+ yrs) converge on L'Oursin and Pho Bac — deep-rooted picks. Mid-career workers favor Lenox and Pancita. A completely different mental map."</div>
+    </div>
+  </div>
+
+  <!-- SEATTLE TENURE -->
+  <div class="panel">
+    <div class="panel-eye" style="color:var(--cream)">By Seattle Tenure</div>
+    <div class="panel-title">Does time in Seattle change your picks?</div>
+    <div class="rule"></div>
+    <table class="exp-table" id="sea-table">
+      <thead><tr><th>Group</th><th>n</th><th>Top Favorites</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="insight">
+      <div class="insight-txt">"Long-term Seattleites (11+ yrs) back L'Oursin and Hamdi. Mid-tenure workers gravitate toward Atoma and Homer. Different chapters of the same city."</div>
+    </div>
+  </div>
+</div>
+
+<!-- QUOTES -->
+<div class="quotes-panel main">
+  <div style="grid-column:1/-1">
+    <div class="panel-eye" style="color:var(--cream)">From the field · Selected comments</div>
+    <div class="panel-title">What industry workers are actually saying</div>
+  </div>
+  <div class="quotes-grid" id="quotes-grid" style="grid-column:1/-1"></div>
+</div>
+
+<!-- FULL LIST -->
+<div class="list-panel">
+  <div class="panel-eye" style="color:var(--cream)">Every restaurant named</div>
+  <div class="panel-title">214 restaurants · no rankings · complete picture</div>
+  <div style="font-size:9px;color:var(--muted);margin-top:4px;letter-spacing:.08em">
+    <span style="color:var(--fav)">■</span> top favorites &nbsp;
+    <span style="color:var(--gem)">■</span> top hidden gems &nbsp;
+    <span style="color:#b8960c">■</span> appears on both lists &nbsp;
+    <span style="color:var(--muted)">■</span> named at least once
+  </div>
+  <div class="list-grid" id="full-list"></div>
+</div>
+
+<div class="footer">
+  <span>Anonymous survey · hospitality industry only · Seattle WA</span>
+  <span>Survey closes Wednesday May 21, 2026</span>
+  <span>@justinmkimphoto · progress update</span>
+</div>
+
+<script>
+// ── ALL DATA ──
+const DATA = [
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Le Pichet",f2:"Stoneburner",f3:"Palace Kitchen",g1:"The Boat",g2:"Persephone",g3:"El Centro",comment:""},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Off Alley",f2:"Copine",f3:"Hamdi",g1:"Pams",g2:"Hog Wild BBQ",g3:"Mendozas",comment:"Thanks for doing this!"},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"RockCreek Seafood",f2:"Joule",f3:"Salty's on Alki Beach",g1:"Uptown China Cafe",g2:"Tai Tung",g3:"Mike's Noodles",comment:"I tend to trust the restaurants that survived the test of time. Taste is subjective but time is objective. If a restaurant survived a long time, there must be a reason."},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Jebena Cafe",f2:"Plenty of Clouds",f3:"Cafe Flora",g1:"Jebena Cafe",g2:"Human People Beer Cafe",g3:"Life on Mars",comment:""},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Newer (1–3 yrs)',f1:"Bongos",f2:"Cornuto",f3:"Asadero",g1:"Bongos",g2:"Salad Party",g3:"Ba + Me",comment:""},
+  {role:'BOH',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Ramie",f2:"Hamdi",f3:"Copine",g1:"Bad Chancla",g2:"Taurus Ox",g3:"Cafe Minur",comment:""},
+  {role:'Owner/GM',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Tivoli",f2:"Pancita",f3:"Ben's Bread",g1:"Cafe Suliman",g2:"Voula's Offshore Cafe",g3:"Cantinetta",comment:"Wedgwood Broiler, 74th Street Ale House, Loretta's - neighborhood staples that have been there forever are really the places that have my heart"},
+  {role:'Other',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"L'Oursin",f2:"Stoneburner",f3:"Pink Door",g1:"L'Oursin",g2:"Can Bar",g3:"Dreamland",comment:""},
+  {role:'FOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"L'Oursin",f2:"Le Pichet",f3:"The Corson Building",g1:"Ramie",g2:"L'Oursin",g3:"Majnoon",comment:"Doe Bay Wine Company has some crazy good prices for drinking great wine. You can buy a bottle at retail price and open it onsite for an additional 15 bucks! Not enough people taking advantage of this!"},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Gan Bei",f2:"Kilig",f3:"L'Oursin",g1:"Gan Bei",g2:"Carnitas Michoacan",g3:"Vietnam House",comment:""},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Ramen Nori",f2:"Ono Authentic Hawaiian Poke",f3:"Rachel's Bagels",g1:"Bò Né House & More",g2:"Bahn Town",g3:"Rondo",comment:"Both Ono Poke and Ramen Nori are an absolute must if you've never been!"},
+  {role:'Owner/GM',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Atoma",f2:"Pancita",f3:"Lupo",g1:"Issian",g2:"Union Saloon",g3:"Good Voyage",comment:"SEATTLE IS THE BEST!"},
+  {role:'FOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Pho Aroma",f2:"Pho Bac",f3:"Honey Court",g1:"Shadowland",g2:"Gainsbourg",g3:"Srivilai Thai Cuisine",comment:"Local over corporation and chains, but big ups to Chilis and Cheesecake Factory"},
+  {role:'FOH',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Cafe Munir",f2:"Made in House",f3:"Ginger & Scallion",g1:"La Carta de Oaxaca",g2:"Gainsbourg",g3:"Little Coney",comment:""},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Le Caviste",f2:"Saigon Deli",f3:"Ocho Tapas",g1:"Kokkaku",g2:"Grazie Ristorante Italiano",g3:"El Parche Colombiano",comment:"You are what you eat"},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Mojito",f2:"La Marea",f3:"Ak Pizza",g1:"Mojito",g2:"Lenox",g3:"Rupee Bar",comment:""},
+  {role:'FOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Bad Chancla",f2:"Cafe Suliman",f3:"De La Soil",g1:"Bad Chancla",g2:"De La Soil",g3:"Three Sacks Full",comment:""},
+  {role:'Owner/GM',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Smarty Pants",f2:"Lenox",f3:"Baba Yaga",g1:"Maruta",g2:"Slim's Last Chance",g3:"",comment:"People like to say there isn't a food scene in Seattle, but it's because those people aren't searching past the tourist spots. Even in Pike Place Market, there's so many hidden gems, but locals don't think to find the treasure there. Seattle has a lot of great food, we should give the appreciation it deserves."},
+  {role:'FOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"L'Oursin",f2:"Lenox",f3:"Itsumono",g1:"Gan Bei",g2:"Dark Room",g3:"Good Voyage",comment:"L'Oursin should be packed every night. I tell everyone about it. I love that place so much. To do what they do in a relaxed and fun environment is so hard to pull off and they do it with aplomb"},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"L'Oursin",f2:"Gan Bei",f3:"Maneki",g1:"Clockout/Stevies",g2:"Rock Creek",g3:"Judes",comment:"Seattle restaurants especially the smaller restaurants are having a really difficult time navigating the political landscape and juggling rising costs. What is happening to our hospitality industry is hard to work in and watch. People need to come together right now more than ever support your favorite places, try new places and keep moving forward!"},
+  {role:'Owner/GM',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Ltd Edition Sushi",f2:"Taylor Shellfish",f3:"Din Tai Fung",g1:"Billiard Hoang",g2:"La Medusa",g3:"Place Pigalle",comment:""},
+  {role:'BOH',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Three Sacks Full",f2:"Off Alley",f3:"Mean Sandwich",g1:"Cedar&Elm",g2:"De La Soil",g3:"Pasta Casalinga",comment:"I do think all of these places really deserve more attention and I wish I could list more!"},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Hamdi",f2:"Homer",f3:"Ludis",g1:"Ba + Me",g2:"Chamorriken",g3:"Tacos Cometa",comment:"This is so broad for me. My 'favorite' restaurants are places I eat very few times a year. My day to day restaurants (my pho spot, my yaki spot etc..) should those be my favorite spots? Idk. Just a thought. This is great! Keep up the good work."},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Onibaba",f2:"La Marea",f3:"Dark Room",g1:"La Marea",g2:"Phnom Penh Noodle House",g3:"Onibaba",comment:""},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Newer (1–3 yrs)',f1:"Ben's Bread",f2:"Cafe Lago",f3:"Local Tide",g1:"Union Saloon",g2:"Cookies Country Chicken",g3:"Hoang Lan",comment:"We don't get to eat out a lot since having a kid. So my picks are based on affordability and family friendliness. I picked Hoang Lan because they make my particular favorite Vietnamese soup: Mì Quảng."},
+  {role:'BOH',exp:'Newer (1–3 yrs)',sea:'Mid (4–10 yrs)',f1:"Ltd Edition Sushi",f2:"Tacos Cometa",f3:"Local Tide",g1:"Bad Chancla",g2:"Honey Court",g3:"Pancita",comment:""},
+  {role:'BOH',exp:'Mid (4–10 yrs)',sea:'Newer (1–3 yrs)',f1:"Pancita",f2:"Arroy Mak",f3:"Atoma",g1:"La Cabana",g2:"Pams",g3:"Lams on Jacksons",comment:"I find that Pancita and Atoma have such great attention to detail from the moment you walk through the door to the end of paying the check. You can tell they care so so much about their guests. Arroy Mak is so family driven that they remember the regulars. The brother and sister run the front and the aunties are in the back. Also Lams is the goat with the banh mi — $6 for a banh mi feels like robbery and the banh bao at 10am for $3 resets any sad feelings you had for that day."},
+  {role:'BOH',exp:'Newer (1–3 yrs)',sea:'Newer (1–3 yrs)',f1:"Rainier Restaurant",f2:"Communion",f3:"Honey Court",g1:"Sabai Sabai Lao & Thai",g2:"Rise & Shine Bakery",g3:"Aroy Mak Thai Food",comment:""},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Ba Bar",f2:"Carnitas Michoacan",f3:"Vindicktive Wings",g1:"Carnitas Michoacan",g2:"La Cabana",g3:"Pho Than Brothers",comment:"I would be shining light on our OG's. The families without the lines out the door that are still doing it with love. The folks that can give two shits about instagram but do it out of necessity, or not at all. The places that were big before the boom."},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Ltd Edition Sushi",f2:"Oriental Mart",f3:"Le Caviste",g1:"Red Star Taco Bar",g2:"El Legendario",g3:"Mas Cafe",comment:"Realizing most of the places I love feel more honest than 'vibey'. I love it when it's homey, personalized, and feels true to the family behind it."},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Nue",f2:"Cheng Du Taste",f3:"Man'oushe Express",g1:"Onmi",g2:"Sunrise Cafe",g3:"Alebrijes",comment:"At Onmi the starters are a highlight not just a filler. M'anoushe has the best Lebanese cuisine in North Seattle"},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Canlis",f2:"Supreme Dumplings",f3:"Young Tea",g1:"Fan Tang",g2:"Flo Anna's Diner",g3:"Kayava",comment:""},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Bar Del Corso",f2:"Lorettas",f3:"Fort St George",g1:"Post Alley Pizza",g2:"El Quetzal",g3:"New Luck Toy",comment:""},
+  {role:'BOH',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Fort St George",f2:"Shiro's",f3:"Hattie's Hat",g1:"Paju",g2:"Pam's Caribbean Kitchen",g3:"Island Soul",comment:"Seattle is a city that is very welcoming to new chefs and concepts but we also have such a wealth of classic restaurants that have stood the test of time. I'd be happy to see a little more love for the spaces that have been there for us."},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Family Friend",f2:"Homer",f3:"Bar Del Corso",g1:"Revel",g2:"Family Friend",g3:"The Boat",comment:""},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Nue",f2:"Radiator Whiskey",f3:"Mike's Noodles",g1:"Nue",g2:"E-Jae Pak Mor",g3:"Lotties",comment:"'Most Unique' would be a cool category to have. Thanks for doing this!"},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Pho Bac",f2:"",f3:"",g1:"Persephone",g2:"Huong Que",g3:"Carnitas Michoacan",comment:"Persephone! What a gem. An OG spot and my go to amaro bar. Get the mackerel. Huong Que! As Viet as it gets. Don't believe Google she doesn't open past 2pm. Carnitas Michoacan for the carnitas plate and sopa de res! 🐄"},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Newer (1–3 yrs)',f1:"Pho Bac",f2:"Driftwood",f3:"Ox Burger",g1:"Mirabelle",g2:"La Marea",g3:"Bar Bayonne",comment:""},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Il Nido",f2:"Bar Del Corso",f3:"Columbia City Bakery",g1:"Habesha",g2:"Both Ways Cafe",g3:"Cafe Munir",comment:"There are a lot of new places I need to try! My best dining out experiences recently have actually been in Portland."},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Atoma",f2:"Il Nido",f3:"Off Alley",g1:"Ursa Minor",g2:"L'Oursin",g3:"Holume",comment:""},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Justin's Butt",f2:"Dantini Pizza",f3:"Teriyaki Way",g1:"Teriyaki Way",g2:"Pink Bee",g3:"Green Tree",comment:"Watson's Counter forever"},
+  {role:'BOH',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Carnitas Michoacan",f2:"Xi'an Noodle",f3:"Lorettas",g1:"Chelan Cafe",g2:"Hudson",g3:"Red Mill Burgers",comment:""},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Newer (1–3 yrs)',f1:"Kilig",f2:"Carrello",f3:"",g1:"No Call No Show",g2:"The Doctor's Office",g3:"",comment:"Thank you for providing this space for us to show some extra love to the community"},
+  {role:'Other',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Dark Room",f2:"Itsumono",f3:"L'Oursin",g1:"Yalla",g2:"Good Voyage",g3:"SabbVerr",comment:"Too many amazing spots. Can't wait to see the results."},
+  {role:'Other',exp:'Newer (1–3 yrs)',sea:'Mid (4–10 yrs)',f1:"The Boat",f2:"Family Friend",f3:"Lorettas",g1:"Gold Coast Kitchen",g2:"Cemitas Poblanas",g3:"Delish",comment:""},
+  {role:'FOH',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Hula Hula",f2:"Itsumono",f3:"Fort St George",g1:"Mccoys",g2:"The Central",g3:"Underbelly",comment:""},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Rondo",f2:"Bait Shop",f3:"Homer",g1:"Annapurna Cafe",g2:"Husky Deli",g3:"Ooink",comment:"Would love to do a separate bar list! For cocktail spots and also more neighborhood casual type joints!"},
+  {role:'BOH',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Itsumono",f2:"Purple Dot",f3:"Rondo",g1:"Itsumono",g2:"Brimmer & Heeltap",g3:"Ton Kiang Noodle House",comment:""},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Long-term (11+ yrs)',f1:"Cornelly",f2:"Amazing Thai Cuisine",f3:"Kobuta & Ookami",g1:"Amazing Thai Cuisine",g2:"",g3:"",comment:""},
+  {role:'Other',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Joule",f2:"Carrello",f3:"Le Caviste",g1:"Carrello",g2:"Phnom Penh Noodle House",g3:"El Quetzal",comment:""},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Lenox",f2:"Homer",f3:"Rupee Bar",g1:"Rupee Bar",g2:"Dark Room",g3:"Good Shape Pizza",comment:"Rupee Bar is quietly one of the best bars and restaurants in the city. It flies under the radar mostly because it's out of the way in Ballard. But if you're over there, you have to try the sherry and tonic."},
+  {role:'Owner/GM',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Bar Miriam",f2:"Rochambeau",f3:"Chiho Bistro",g1:"Rochambeau",g2:"Chiho Bistro",g3:"",comment:""},
+  {role:'Owner/GM',exp:'Mid (4–10 yrs)',sea:'Long-term (11+ yrs)',f1:"Lenox",f2:"Masakan",f3:"Pho Bac",g1:"Pidgin Cooperative",g2:"Family Friend",g3:"Masakan",comment:""},
+  {role:'Other',exp:'Newer (1–3 yrs)',sea:'Long-term (11+ yrs)',f1:"Musang",f2:"Hamdi",f3:"Pancita",g1:"Good Voyage",g2:"Kuma",g3:"Egg Squared",comment:""},
+  {role:'FOH',exp:'Mid (4–10 yrs)',sea:'Mid (4–10 yrs)',f1:"Cafe Suliman",f2:"L'Oursin",f3:"Rupee Bar",g1:"Good Shape Pizza",g2:"Le Caviste",g3:"Pasta Casalinga",comment:"Good Shape Pizza is making incredibly good pizza out of an arcade bar and it deserves major love"},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"S/T Hooligans",f2:"Bizarro Italian Cafe",f3:"Cafe Zig Zag",g1:"S/T Hooligans",g2:"Malena's",g3:"Panarchy Pizza",comment:""},
+  {role:'Owner/GM',exp:'Veteran (11+ yrs)',sea:'Mid (4–10 yrs)',f1:"Hamdi",f2:"Kau Kau",f3:"Pho Bac",g1:"Hello Em",g2:"Ba + Me",g3:"Donnas",comment:""},
+];
+
+// ── SCORING ──
+function norm(s){
+  if(!s) return '';
+  s = s.trim();
+  const map = {
+    "L'oursin":"L'Oursin","l'oursin":"L'Oursin",
+    "Pho bac":"Pho Bac","Pho Bac Sup Shop":"Pho Bac",
+    "Carnitas Michochan":"Carnitas Michoacan","Carnitas Michoacán":"Carnitas Michoacan",
+    "Off alley":"Off Alley","Gan bei":"Gan Bei","Hamdi ":"Hamdi",
+    "Bad Chancla ":"Bad Chancla","De La Soil ":"De La Soil",
+    "Bar del Corso":"Bar Del Corso",
+  };
+  return map[s] || s;
+}
+
+function score(rows){
+  const fv={}, gm={};
+  rows.forEach(r=>{
+    [[r.f1,3],[r.f2,2],[r.f3,1]].forEach(([n,p])=>{ const k=norm(n); if(k) fv[k]=(fv[k]||0)+p; });
+    [[r.g1,3],[r.g2,2],[r.g3,1]].forEach(([n,p])=>{ const k=norm(n); if(k) gm[k]=(gm[k]||0)+p; });
+  });
+  return {
+    fav: Object.entries(fv).sort((a,b)=>b[1]-a[1]),
+    gem: Object.entries(gm).sort((a,b)=>b[1]-a[1])
+  };
+}
+
+// ── FILTER STATE ──
+let F = {role:'all', exp:'all', sea:'all'};
+
+function filtered(){
+  return DATA.filter(r=>{
+    if(F.role!=='all' && r.role!==F.role) return false;
+    if(F.exp!=='all' && r.exp!==F.exp) return false;
+    if(F.sea!=='all' && r.sea!==F.sea) return false;
+    return true;
+  });
+}
+
+// ── RENDER BARS ──
+function renderBars(id, data, color){
+  const el=document.getElementById(id); el.innerHTML='';
+  const top=data.slice(0,10), mx=top[0]?.[1]||1;
+  top.forEach(([name,pts],i)=>{
+    const pct=(pts/mx)*100;
+    el.insertAdjacentHTML('beforeend',`
+      <div class="bar-row">
+        <div class="bar-rank">${i+1}</div>
+        <div class="bar-wrap">
+          <div class="bar-bg"></div>
+          <div class="bar-fg" style="background:${color};width:${pct}%"></div>
+          <div class="bar-lbl">${name}</div>
+        </div>
+        <div class="bar-pts">${pts}</div>
+      </div>`);
+  });
+}
+
+// ── RENDER ROLES ──
+function renderRoles(rows){
+  const el=document.getElementById('role-breakdown'); el.innerHTML='';
+  [{key:'BOH',lbl:'BOH — Chefs & Cooks',color:'var(--boh)'},
+   {key:'FOH',lbl:'FOH — Service & Bar',color:'var(--foh)'},
+   {key:'Owner/GM',lbl:'Owners & GMs',color:'var(--owner)'}].forEach(g=>{
+    const sub=rows.filter(r=>r.role===g.key); if(!sub.length) return;
+    const {fav,gem}=score(sub);
+    const tf=fav.slice(0,3), tg=gem.slice(0,2);
+    el.insertAdjacentHTML('beforeend',`
+      <div class="role-block">
+        <div class="role-hdr">
+          <div class="rdot" style="background:${g.color}"></div>
+          <div class="rlbl">${g.lbl}</div>
+          <div class="rn">n=${sub.length}</div>
+        </div>
+        <div class="rpicks">
+          ${tf.map(([n,p])=>`<span class="rtag" style="border-color:${g.color};color:${g.color}">${n} <span style="opacity:.6">${p}</span></span>`).join('')}
+          ${tg.map(([n,p])=>`<span class="rtag" style="border-color:var(--gem);color:var(--gem)">${n} ✦</span>`).join('')}
+        </div>
+      </div>`);
+  });
+}
+
+// ── RENDER CROSSOVER ──
+function renderCrossover(fav, gem){
+  const el=document.getElementById('ov-list'); el.innerHTML='';
+  const fm=Object.fromEntries(fav), gm=Object.fromEntries(gem);
+  const top20f=new Set(fav.slice(0,20).map(([n])=>n));
+  const top20g=new Set(gem.slice(0,20).map(([n])=>n));
+  const both=[...top20f].filter(n=>top20g.has(n))
+    .map(n=>({name:n,fav:fm[n],gem:gm[n],tot:(fm[n]||0)+(gm[n]||0)}))
+    .sort((a,b)=>b.tot-a.tot).slice(0,5);
+  if(!both.length){
+    el.innerHTML=`<div style="color:var(--muted);font-size:10px;padding:16px 0">No crossover in this filter</div>`;
+    return;
+  }
+  both.forEach(d=>{
+    el.insertAdjacentHTML('beforeend',`
+      <div class="ov-item">
+        <div><div class="ov-name">${d.name}</div></div>
+        <div class="ov-col"><div class="ov-pts" style="color:var(--fav)">${d.fav}</div><div class="ov-lbl">fav</div></div>
+        <div class="ov-col"><div class="ov-pts" style="color:var(--gem)">${d.gem}</div><div class="ov-lbl">gem</div></div>
+      </div>`);
+  });
+}
+
+// ── RENDER EXP/SEA TABLE ──
+function renderTable(id, rows, groupKey, groups){
+  const tbody=document.querySelector(`#${id} tbody`); tbody.innerHTML='';
+  groups.forEach(g=>{
+    const sub=rows.filter(r=>r[groupKey]===g.key); if(!sub.length) return;
+    const {fav}=score(sub);
+    const top=fav.slice(0,3).map(([n,p])=>`${n}`).join(' · ');
+    tbody.insertAdjacentHTML('beforeend',`
+      <tr>
+        <td class="exp-lbl">${g.short}</td>
+        <td class="exp-n">${sub.length}</td>
+        <td class="exp-picks">${top}</td>
+      </tr>`);
+  });
+}
+
+// ── QUOTES ──
+const GOOD_QUOTES = [
+  {txt:"L'Oursin should be packed every night. I tell everyone about it. To do what they do in a relaxed and fun environment is so hard to pull off and they do it with aplomb.",role:"FOH · 11–15 yrs",type:"highlight"},
+  {txt:"The places that were big before the boom. The families without the lines out the door that are still doing it with love. The folks that can give two shits about Instagram but do it out of necessity, or not at all.",role:"BOH · 16–20 yrs",type:"highlight"},
+  {txt:"Realizing most of the places I love feel more honest than 'vibey'. I love it when it's homey, personalized, and feels true to the family behind it.",role:"Owner/GM · 11–15 yrs",type:"highlight"},
+  {txt:"Seattle restaurants especially the smaller restaurants are having a really difficult time navigating the political landscape and juggling rising costs. People need to come together right now more than ever — support your favorite places, try new places and keep moving forward!",role:"Owner/GM · 21+ yrs",type:"highlight"},
+  {txt:"People like to say there isn't a food scene in Seattle, but it's because those people aren't searching past the tourist spots. Seattle has a lot of great food, we should give the appreciation it deserves.",role:"Owner/GM · 4–6 yrs",type:""},
+  {txt:"Arroy Mak is so family driven that they remember the regulars. The brother and sister run the front and the aunties are in the back. You won't catch them making mango sticky rice in December.",role:"BOH · 4–6 yrs",type:"gem-q"},
+  {txt:"Rupee Bar is quietly one of the best bars and restaurants in the city. It flies under the radar mostly because it's out of the way in Ballard. But if you're over there, you have to try the sherry and tonic.",role:"FOH · 7–10 yrs",type:"gem-q"},
+  {txt:"Good Shape Pizza is making incredibly good pizza out of an arcade bar and it deserves major love.",role:"FOH · 7–10 yrs",type:"gem-q"},
+  {txt:"Taste is subjective but time is objective. If a restaurant survived a long time, there must be a reason.",role:"Owner/GM · 11–15 yrs",type:""},
+  {txt:"This is so broad for me. My 'favorite' restaurants are places I eat very few times a year. My day to day restaurants — my pho spot, my yaki spot — should those be my favorites? Just a thought.",role:"BOH · 11–15 yrs",type:""},
+  {txt:"Would love to do a separate bar list! For cocktail spots and also more neighborhood casual type joints!",role:"FOH · 7–10 yrs",type:""},
+  {txt:"$6 for a banh mi feels like robbery and the banh bao at 10am for $3 resets any sad feelings you had for that day.",role:"BOH · 4–6 yrs",type:"gem-q"},
+  {txt:"Seattle is a city that is very welcoming to new chefs and concepts but we also have such a wealth of classic restaurants that have stood the test of time. I'd be happy to see a little more love for the spaces that have been there for us.",role:"BOH · 7–10 yrs",type:""},
+  {txt:"Persephone! What a gem. An OG spot and my go to amaro bar. Get the mackerel. Carnitas Michoacan for the carnitas plate and sopa de res! 🐄",role:"BOH · 21+ yrs",type:"gem-q"},
+];
+
+function renderQuotes(){
+  const el=document.getElementById('quotes-grid'); el.innerHTML='';
+  GOOD_QUOTES.forEach(q=>{
+    el.insertAdjacentHTML('beforeend',`
+      <div class="quote-card ${q.type}">
+        <div class="quote-txt">"${q.txt}"</div>
+        <div class="quote-meta">${q.role}</div>
+      </div>`);
+  });
+}
+
+// ── FULL LIST ──
+function renderFullList(fav, gem){
+  const el=document.getElementById('full-list'); el.innerHTML='';
+  const favMap=Object.fromEntries(fav), gemMap=Object.fromEntries(gem);
+  const topF=new Set(fav.slice(0,15).map(([n])=>n));
+  const topG=new Set(gem.slice(0,15).map(([n])=>n));
+  const all=new Set();
+  DATA.forEach(r=>['f1','f2','f3','g1','g2','g3'].forEach(k=>{ if(r[k]) all.add(norm(r[k])); }));
+  const sorted=[...all].sort((a,b)=>a.localeCompare(b));
+  sorted.forEach(name=>{
+    const isBoth=topF.has(name)&&topG.has(name);
+    const isFav=topF.has(name)&&!isBoth;
+    const isGem=topG.has(name)&&!isBoth;
+    const cls=isBoth?'crossover':isFav?'top-fav':isGem?'top-gem':'';
+    const pts=favMap[name]||gemMap[name]||'';
+    el.insertAdjacentHTML('beforeend',`
+      <div class="list-item ${cls}">
+        <span>${name}</span>
+        ${pts?`<span class="list-pts">${pts}pt</span>`:''}
+      </div>`);
+  });
+}
+
+// ── INSIGHT COPY ──
+const INSIGHTS = {
+  all: "Survey closes Wednesday. 57 responses, 214 restaurants named. L'Oursin leads favorites by a wide margin.",
+  BOH: "BOH workers are the most spread-out group — 22 respondents, wide range of picks. Off Alley, Hamdi, and Nue lead favorites.",
+  FOH: "Front of house backs L'Oursin hard. Kilig and Cafe Suliman also appear — picks with strong hospitality floor energy.",
+  'Owner/GM': "Owners/GMs show the widest geographic range. Ltd Edition Sushi, Lenox, Pancita top their list.",
+  'Veteran (11+ yrs)': "34 veterans (11+ yrs). L'Oursin, Pho Bac, Hamdi — rooted picks that predate the recent wave.",
+  'Mid (4–10 yrs)': "Mid-career workers favor Lenox, Pancita, Kilig — newer but not trendy. A different read on the city.",
+  'Newer (1–3 yrs)': "Only 4 responses in this group — small sample. Ltd Edition Sushi and Rainier Restaurant appear.",
+  'Long-term (11+ yrs)': "Long-term Seattleites (11+ yrs) anchor on L'Oursin, Hamdi, Itsumono. Institutional memory in every vote.",
+  'Mid (4–10 yrs)_sea': "Mid-tenure residents pick Atoma, Family Friend, Homer — a more recent Seattle perspective.",
+  'Newer (1–3 yrs)_sea': "Newer Seattleites are still mapping the city. Small sample — 6 responses.",
+};
+
+// ── MAIN RENDER ──
+function renderAll(){
+  const rows=filtered();
+  const {fav,gem}=score(rows);
+  document.getElementById('hn').textContent=rows.length;
+  renderBars('fav-bars',fav,'var(--fav)');
+  renderBars('gem-bars',gem,'var(--gem)');
+  renderRoles(rows);
+  renderCrossover(fav,gem);
+  renderTable('exp-table',rows,'exp',[
+    {key:'Veteran (11+ yrs)',short:'Veterans 11+'},
+    {key:'Mid (4–10 yrs)',short:'Mid 4–10'},
+    {key:'Newer (1–3 yrs)',short:'Newer 1–3'},
+  ]);
+  renderTable('sea-table',rows,'sea',[
+    {key:'Long-term (11+ yrs)',short:'11+ yrs Seattle'},
+    {key:'Mid (4–10 yrs)',short:'4–10 yrs'},
+    {key:'Newer (1–3 yrs)',short:'1–3 yrs'},
+  ]);
+  renderFullList(fav,gem);
+
+  const insKey = F.role!=='all'?F.role : F.exp!=='all'?F.exp : F.sea!=='all'?(F.sea+'_sea') : 'all';
+  document.getElementById('fs-insight').textContent = INSIGHTS[insKey]||INSIGHTS.all;
+
+  const rl={all:'All roles',FOH:'FOH',BOH:'BOH','Owner/GM':'Owners/GMs'};
+  const el={all:'All experience','Veteran (11+ yrs)':'Veterans','Mid (4–10 yrs)':'Mid-career','Newer (1–3 yrs)':'Newer'};
+  const sl={all:'All Seattle tenure','Long-term (11+ yrs)':'Long-term','Mid (4–10 yrs)':'Mid','Newer (1–3 yrs)':'Newer'};
+  document.getElementById('fs-label').textContent=`${rl[F.role]} · ${el[F.exp]} · ${sl[F.sea]} · n=${rows.length}`;
+}
+
+function setF(type,val,btn){
+  const gid={role:'rf',exp:'ef',sea:'sf'}[type];
+  document.querySelectorAll(`#${gid} .fb`).forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  F[type]=val;
+  renderAll();
+}
+
+renderQuotes();
+renderAll();
+</script>
+</body>
+</html>
