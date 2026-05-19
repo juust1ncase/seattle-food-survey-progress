@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seattle Industry Survey — Carousel v12</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #b8922a;
+    --gold-bg: #fdf6e3;
+    --sage: #5a9e88;
+    --sage-bg: #eef6f2;
+    --rose: #b85c72;
+    --rose-bg: #faf0f2;
+    --ink: #1a1612;
+    --ink-mid: #3d352d;
+    --ink-light: #7a6e64;
+    --rule: #d8cfc4;
+    --paper: #f5f1eb;
+    --white: #ffffff;
+  }
+
+  body {
+    background: #e0dbd3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    gap: 32px;
+    font-family: 'Instrument Sans', sans-serif;
+  }
+
+  .slide-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #888;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .slide-container {
+    width: calc(1080px * 0.38);
+    height: calc(1350px * 0.38);
+    overflow: hidden;
+  }
+
+  .slide-wrap {
+    transform: scale(0.38);
+    transform-origin: top left;
+    width: 1080px;
+    height: 1350px;
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Interior slides — vertically centered content */
+  .slide-inner {
+    padding: 72px 88px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /* ── TYPE ── */
+  .section-kicker { font-family: 'DM Mono', monospace; font-size: 16px; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 14px; }
+  .section-headline { font-family: 'DM Serif Display', serif; font-size: 72px; line-height: 1.0; color: var(--ink); margin-bottom: 12px; }
+  .section-sub { font-family: 'Instrument Sans', sans-serif; font-size: 24px; color: var(--ink-light); line-height: 1.5; margin-bottom: 40px; }
+
+  /* ── RESULT ROWS ── */
+  .result-row { display: flex; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--rule); gap: 18px; }
+  .result-row:first-child { border-top: 1px solid var(--rule); }
+  .result-rank { font-family: 'DM Mono', monospace; font-size: 16px; color: var(--ink-light); width: 36px; flex-shrink: 0; }
+  .result-name { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--ink); flex: 1; line-height: 1.1; }
+  .result-score { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; flex-shrink: 0; }
+  .score-gold { color: var(--gold); }
+  .score-sage { color: var(--sage); }
+
+  /* ── BAR CHARTS ── */
+  .chart-group { margin-bottom: 48px; }
+  .chart-group:last-child { margin-bottom: 0; }
+  .chart-label { font-family: 'DM Mono', monospace; font-size: 17px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin-bottom: 22px; font-weight: 500; }
+  .bar-rows { display: flex; flex-direction: column; gap: 16px; }
+  .bar-row { display: flex; align-items: center; gap: 18px; }
+  .bar-name { font-family: 'Instrument Sans', sans-serif; font-size: 22px; color: var(--ink); width: 240px; flex-shrink: 0; font-weight: 500; }
+  .bar-track { flex: 1; height: 16px; background: var(--paper); border-radius: 2px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+  .bar-fill.gold { background: var(--gold); }
+  .bar-fill.sage { background: var(--sage); }
+  .bar-fill.rose { background: var(--rose); }
+  .bar-count { font-family: 'DM Mono', monospace; font-size: 20px; color: var(--ink-light); width: 44px; text-align: right; flex-shrink: 0; }
+
+  /* ── PILLS ── */
+  .pill { font-family: 'DM Mono', monospace; font-size: 16px; padding: 6px 16px; border-radius: 100px; white-space: nowrap; }
+  .pill-gold { background: var(--gold-bg); color: var(--gold); }
+  .pill-sage { background: var(--sage-bg); color: var(--sage); }
+  .pill-rose { background: var(--rose-bg); color: var(--rose); }
+  .dual-pill { display: flex; gap: 8px; flex-shrink: 0; }
+
+  /* ── CROSSOVER ── */
+  .crossover-row { display: flex; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--rule); gap: 18px; }
+  .crossover-row:first-child { border-top: 1px solid var(--rule); }
+  .crossover-name { font-family: 'DM Serif Display', serif; font-size: 36px; color: var(--ink); flex: 1; }
+
+  /* ── MENTION CARDS ── */
+  .mentions-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .mention-card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 26px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+  }
+  .mention-card-name { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--ink); margin-bottom: 10px; line-height: 1.1; }
+  .mention-card-note { font-family: 'Instrument Sans', sans-serif; font-size: 16px; color: var(--ink-light); line-height: 1.45; margin-bottom: 14px; }
+  .mention-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .mention-tag { font-family: 'DM Mono', monospace; font-size: 13px; padding: 4px 11px; border-radius: 100px; background: rgba(0,0,0,0.07); color: var(--ink-mid); }
+
+  /* ── ROLE CARDS ── */
+  .role-grid-full { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .role-card { border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+  .role-card-header { background: var(--ink); color: #fff; padding: 20px 22px; font-family: 'DM Mono', monospace; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.5; }
+  .role-card-header-name { font-size: 16px; font-weight: 500; display: block; }
+  .role-card-header-count { font-size: 13px; color: rgba(255,255,255,0.5); display: block; margin-top: 2px; }
+  .role-card-body { padding: 0; background: var(--white); }
+  .role-pick-item { display: flex; align-items: center; gap: 12px; padding: 13px 20px; border-bottom: 1px solid var(--rule); }
+  .role-pick-item:last-child { border-bottom: none; }
+  .role-pick-rank { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink-light); flex-shrink: 0; width: 26px; }
+  .role-pick-name { font-family: 'Instrument Sans', sans-serif; font-size: 19px; font-weight: 600; color: var(--ink); line-height: 1.2; flex: 1; }
+  .role-pick-score { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--ink-light); flex-shrink: 0; }
+
+  /* ── EXP CARDS ── */
+  .exp-grid-full { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .exp-card { border-radius: 4px; overflow: hidden; border: 1px solid var(--rule); }
+  .exp-card-header { background: var(--ink); padding: 20px 22px; border-bottom: 1px solid var(--rule); }
+  .exp-card-label { font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-bottom: 4px; }
+  .exp-card-range { font-family: 'DM Serif Display', serif; font-size: 30px; color: #fff; line-height: 1.1; }
+  .exp-card-count { font-family: 'DM Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.45); margin-top: 4px; }
+  .exp-card-body { background: var(--white); }
+  .exp-pick-item { display: flex; align-items: center; gap: 12px; padding: 13px 22px; border-bottom: 1px solid var(--rule); }
+  .exp-pick-item:last-child { border-bottom: none; }
+  .exp-pick-rank { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ink-light); flex-shrink: 0; width: 26px; }
+  .exp-pick-name { font-family: 'Instrument Sans', sans-serif; font-size: 19px; font-weight: 600; color: var(--ink); line-height: 1.2; flex: 1; }
+  .exp-pick-score { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--ink-light); flex-shrink: 0; }
+
+  /* ── INSIGHT BOX ── */
+  .insight-box { padding: 28px 34px; background: var(--paper); border-radius: 4px; border: 1px solid var(--rule); }
+  .insight-label { font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 10px; }
+  .insight-text { font-family: 'Instrument Sans', sans-serif; font-size: 22px; color: var(--ink); line-height: 1.5; }
+
+  /* ── PHOTO PLACEHOLDER ── */
+  .photo-slide { background: var(--ink); }
+  .photo-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; position: relative; }
+  .photo-placeholder-icon { width: 80px; height: 80px; border: 2px solid rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .photo-placeholder-label { font-family: 'DM Mono', monospace; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.25); }
+  .photo-placeholder-num { position: absolute; top: 48px; left: 56px; font-family: 'DM Mono', monospace; font-size: 13px; color: rgba(255,255,255,0.2); letter-spacing: 0.1em; }
+
+  /* ── COVER ── */
+  .s01 { background: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SLIDE 01 — COVER (v12 redesign)
+     Layout (top→bottom):
+       · eyebrow + headline + desc + scoring  ~top third
+       · photo zone                           ~middle third (placeholder)
+       · two category labels                  ~bottom strip
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">01 / 11 — Cover</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide s01" style="display:flex; flex-direction:column;">
+
+      <!-- TOP: text block -->
+      <div style="padding: 80px 88px 48px; flex-shrink:0;">
+        <div style="font-family:'DM Mono',monospace; font-size:14px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:24px;">
+          Seattle Industry Survey · 2025
+        </div>
+        <div style="font-family:'DM Serif Display',serif; font-size:128px; line-height:0.88; color:#fff; margin-bottom:20px;">
+          68<br>voices.
+        </div>
+        <div style="font-family:'DM Serif Display',serif; font-style:italic; font-size:38px; color:rgba(255,255,255,0.45); line-height:1.25; margin-bottom:32px;">
+          Where does Seattle hospitality<br>actually eat?
+        </div>
+        <div style="font-family:'Instrument Sans',sans-serif; font-size:20px; line-height:1.65; color:rgba(255,255,255,0.55); max-width:740px; margin-bottom:36px;">
+          Anonymous picks from the cooks, servers, owners, and GMs who shape this city's food scene.
+        </div>
+        <!-- Scoring — lives close to the header copy -->
+        <div style="display:flex; gap:0; border-top:1px solid rgba(255,255,255,0.1); padding-top:24px;">
+          <div style="flex:1; border-right:1px solid rgba(255,255,255,0.1); padding-right:28px; margin-right:28px;">
+            <div style="font-family:'DM Mono',monospace; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:8px;">Scoring</div>
+            <div style="font-family:'DM Mono',monospace; font-size:17px; color:rgba(255,255,255,0.6); line-height:1.9;">
+              1st pick — <span style="color:#fff;">3 pts</span><br>
+              2nd pick — <span style="color:#fff;">2 pts</span><br>
+              3rd pick — <span style="color:#fff;">1 pt</span>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div style="font-family:'DM Mono',monospace; font-size:13px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.3); margin-bottom:8px;">Respondents</div>
+            <div style="font-family:'DM Serif Display',serif; font-size:52px; color:#fff; line-height:1;">67</div>
+            <div style="font-family:'DM Mono',monospace; font-size:14px; color:rgba(255,255,255,0.35); margin-top:4px; letter-spacing:0.06em;">valid responses</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MIDDLE: photo zone -->
+      <div style="flex:1; margin: 0 88px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); border-radius:4px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; min-height:0;">
+        <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style="opacity:0.2;">
+          <rect x="2" y="6" width="28" height="22" rx="2" stroke="white" stroke-width="1.5"/>
+          <circle cx="16" cy="17" r="6" stroke="white" stroke-width="1.5"/>
+          <path d="M11 6l2-4h6l2 4" stroke="white" stroke-width="1.5"/>
+        </svg>
+        <div style="font-family:'DM Mono',monospace; font-size:13px; letter-spacing:0.18em; text-transform:uppercase; color:rgba(255,255,255,0.18);">Photo — place here</div>
+      </div>
+
+      <!-- BOTTOM: two categories -->
+      <div style="padding: 32px 88px 56px; flex-shrink:0; display:flex; gap:20px; align-items:stretch;">
+        <div style="flex:1; display:flex; align-items:center; gap:14px; padding:20px 24px; border:1px solid rgba(184,146,42,0.3); border-radius:4px; background:rgba(184,146,42,0.08);">
+          <div style="width:10px; height:10px; border-radius:50%; background:var(--gold); flex-shrink:0;"></div>
+          <div>
+            <div style="font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:4px;">Category 01</div>
+            <div style="font-family:'DM Serif Display',serif; font-size:26px; color:#fff; line-height:1.1;">Favorite Restaurants</div>
+          </div>
+        </div>
+        <div style="flex:1; display:flex; align-items:center; gap:14px; padding:20px 24px; border:1px solid rgba(90,158,136,0.3); border-radius:4px; background:rgba(90,158,136,0.08);">
+          <div style="width:10px; height:10px; border-radius:50%; background:var(--sage); flex-shrink:0;"></div>
+          <div>
+            <div style="font-family:'DM Mono',monospace; font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:4px;">Category 02</div>
+            <div style="font-family:'DM Serif Display',serif; font-size:26px; color:#fff; line-height:1.1;">Hidden Gems</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 02 — WHO RESPONDED
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">02 / 11 — Who Responded</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide" style="background:var(--white);">
+      <div class="slide-inner">
+        <div class="section-kicker" style="color:var(--ink-light);">68 responses · Seattle hospitality only</div>
+        <div class="section-headline">The respondents.</div>
+        <div class="section-sub">Anonymous. Industry-only.</div>
+
+        <div class="chart-group">
+          <div class="chart-label">By Role</div>
+          <div class="bar-rows">
+            <div class="bar-row"><div class="bar-name">Chef / Kitchen</div><div class="bar-track"><div class="bar-fill gold" style="width:82%"></div></div><div class="bar-count">27</div></div>
+            <div class="bar-row"><div class="bar-name">Owner / GM</div><div class="bar-track"><div class="bar-fill gold" style="width:55%"></div></div><div class="bar-count">18</div></div>
+            <div class="bar-row"><div class="bar-name">Front of House</div><div class="bar-track"><div class="bar-fill gold" style="width:43%"></div></div><div class="bar-count">14</div></div>
+            <div class="bar-row"><div class="bar-name">Other</div><div class="bar-track"><div class="bar-fill gold" style="width:21%"></div></div><div class="bar-count">7</div></div>
+          </div>
+        </div>
+
+        <div class="chart-group">
+          <div class="chart-label">Years in Industry</div>
+          <div class="bar-rows">
+            <div class="bar-row"><div class="bar-name">Veterans (11+ yrs)</div><div class="bar-track"><div class="bar-fill sage" style="width:100%"></div></div><div class="bar-count">40</div></div>
+            <div class="bar-row"><div class="bar-name">Mid-career (4–10)</div><div class="bar-track"><div class="bar-fill sage" style="width:50%"></div></div><div class="bar-count">20</div></div>
+            <div class="bar-row"><div class="bar-name">Newer (1–3 yrs)</div><div class="bar-track"><div class="bar-fill sage" style="width:15%"></div></div><div class="bar-count">6</div></div>
+          </div>
+        </div>
+
+        <div class="chart-group">
+          <div class="chart-label">Seattle Tenure</div>
+          <div class="bar-rows">
+            <div class="bar-row"><div class="bar-name">Long-term (11+ yrs)</div><div class="bar-track"><div class="bar-fill rose" style="width:100%"></div></div><div class="bar-count">36</div></div>
+            <div class="bar-row"><div class="bar-name">Mid (4–10 yrs)</div><div class="bar-track"><div class="bar-fill rose" style="width:58%"></div></div><div class="bar-count">21</div></div>
+            <div class="bar-row"><div class="bar-name">Newer (1–3 yrs)</div><div class="bar-track"><div class="bar-fill rose" style="width:25%"></div></div><div class="bar-count">9</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 03 — TOP FAVORITES
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">03 / 11 — Top Favorites</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide" style="background:var(--white);">
+      <div class="slide-inner">
+        <div class="section-kicker" style="color:var(--gold);">● Favorite Restaurants — weighted score</div>
+        <div class="section-headline" style="font-size:60px; margin-bottom:6px;">Where they love to eat.</div>
+        <div class="section-sub" style="margin-bottom:24px; font-size:21px;">Top picks from 68 industry respondents.</div>
+        <div>
+          <div class="result-row"><div class="result-rank">01</div><div class="result-name">L'Oursin</div><div class="result-score score-gold">16</div></div>
+          <div class="result-row"><div class="result-rank">02</div><div class="result-name">Pancita</div><div class="result-score score-gold">14</div></div>
+          <div class="result-row"><div class="result-rank">03</div><div class="result-name">Hamdi</div><div class="result-score score-gold">13</div></div>
+          <div class="result-row"><div class="result-rank">04</div><div class="result-name">Pho Bac</div><div class="result-score score-gold">11</div></div>
+          <div class="result-row"><div class="result-rank">05</div><div class="result-name">Lenox</div><div class="result-score score-gold">10</div></div>
+          <div class="result-row"><div class="result-rank">05</div><div class="result-name">Ltd Edition Sushi</div><div class="result-score score-gold">10</div></div>
+          <div class="result-row"><div class="result-rank">07</div><div class="result-name">Itsumono</div><div class="result-score score-gold">8</div></div>
+          <div class="result-row"><div class="result-rank">07</div><div class="result-name">Homer</div><div class="result-score score-gold">8</div></div>
+          <div class="result-row"><div class="result-rank">09</div><div class="result-name">Le Pichet</div><div class="result-score score-gold">7</div></div>
+          <div class="result-row"><div class="result-rank">09</div><div class="result-name">Kilig</div><div class="result-score score-gold">7</div></div>
+          <div class="result-row"><div class="result-rank">09</div><div class="result-name">Atoma</div><div class="result-score score-gold">7</div></div>
+          <div class="result-row"><div class="result-rank">09</div><div class="result-name">Lupo</div><div class="result-score score-gold">7</div></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 04 — HIDDEN GEMS & CROSSOVER
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">04 / 11 — Hidden Gems & Crossover</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide" style="background:var(--white);">
+      <div class="slide-inner">
+        <div class="section-kicker" style="color:var(--sage); margin-bottom:8px;">● Hidden Gems — weighted score</div>
+        <div class="section-headline" style="font-size:54px; margin-bottom:6px;">The under-the-radar picks.</div>
+        <div class="section-sub" style="font-size:20px; margin-bottom:22px;">Spots industry folks love that haven't broken through yet.</div>
+        <div style="margin-bottom:44px;">
+          <div class="result-row"><div class="result-rank">01</div><div class="result-name">Bad Chancla</div><div class="result-score score-sage">9</div></div>
+          <div class="result-row"><div class="result-rank">02</div><div class="result-name">Pam's</div><div class="result-score score-sage">7</div></div>
+          <div class="result-row"><div class="result-rank">02</div><div class="result-name">Good Voyage</div><div class="result-score score-sage">7</div></div>
+          <div class="result-row"><div class="result-rank">02</div><div class="result-name">Rupee Bar</div><div class="result-score score-sage">7</div></div>
+          <div class="result-row"><div class="result-rank">02</div><div class="result-name">La Marea</div><div class="result-score score-sage">7</div></div>
+          <div class="result-row"><div class="result-rank">06</div><div class="result-name">Ba + Me</div><div class="result-score score-sage">6</div></div>
+          <div class="result-row"><div class="result-rank">06</div><div class="result-name">Gan Bei</div><div class="result-score score-sage">6</div></div>
+          <div class="result-row"><div class="result-rank">06</div><div class="result-name">Carnitas Michoacan</div><div class="result-score score-sage">6</div></div>
+          <div class="result-row"><div class="result-rank">06</div><div class="result-name">Amazing Thai Cuisine</div><div class="result-score score-sage">6</div></div>
+        </div>
+        <div class="section-kicker" style="color:var(--rose); margin-bottom:14px;">● On Both Lists</div>
+        <div class="crossover-row"><div class="crossover-name">L'Oursin</div><div class="dual-pill"><span class="pill pill-gold">Fav 16</span><span class="pill pill-rose">Gem 7</span></div></div>
+        <div class="crossover-row"><div class="crossover-name">Bad Chancla</div><div class="dual-pill"><span class="pill pill-gold">Fav 3</span><span class="pill pill-rose">Gem 9</span></div></div>
+        <div class="crossover-row"><div class="crossover-name">Rupee Bar</div><div class="dual-pill"><span class="pill pill-gold">Fav 5</span><span class="pill pill-rose">Gem 7</span></div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 05 — FREQUENTLY MENTIONED
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">05 / 11 — Frequently Mentioned</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide" style="background:var(--white);">
+      <div class="slide-inner" style="align-items:center; text-align:center; justify-content:center;">
+
+        <div class="section-kicker" style="color:var(--ink-light); font-size:18px;">Honorable mentions</div>
+        <div class="section-headline" style="font-size:76px; margin-bottom:14px;">Also showing up.</div>
+        <div style="font-family:'Instrument Sans',sans-serif; font-size:20px; color:var(--ink-light); line-height:1.5; margin-bottom:36px; max-width:820px;">Appeared across multiple ballots — consistently named by people who know where to eat.</div>
+
+        <div class="mentions-grid" style="width:100%;">
+          <div class="mention-card">
+            <div class="mention-card-name">Off Alley</div>
+            <div class="mention-card-note">BOH's top pick — where cooks eat after shift</div>
+            <div class="mention-tags"><span class="mention-tag">BOH #1</span><span class="mention-tag">Fav 6</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Le Caviste</div>
+            <div class="mention-card-note">Strong across owner and veteran voters</div>
+            <div class="mention-tags"><span class="mention-tag">Fav 7</span><span class="mention-tag">Veterans</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Bar Del Corso</div>
+            <div class="mention-card-note">Consistent among chefs and owners</div>
+            <div class="mention-tags"><span class="mention-tag">Fav 7</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Cafe Suliman</div>
+            <div class="mention-card-note">Named across FOH and Hidden Gems</div>
+            <div class="mention-tags"><span class="mention-tag">FOH pick</span><span class="mention-tag">Gem</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Persephone</div>
+            <div class="mention-card-note">Veteran chefs' go-to amaro bar</div>
+            <div class="mention-tags"><span class="mention-tag">Gem 5</span><span class="mention-tag">Veterans</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Union Saloon</div>
+            <div class="mention-card-note">Quietly consistent across both lists</div>
+            <div class="mention-tags"><span class="mention-tag">Gem 5</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Tacos Cometa</div>
+            <div class="mention-card-note">Named by newer and mid-career workers</div>
+            <div class="mention-tags"><span class="mention-tag">Gem</span><span class="mention-tag">Mid-career</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Honey Court</div>
+            <div class="mention-card-note">Named across multiple roles and experience levels</div>
+            <div class="mention-tags"><span class="mention-tag">Multi-role</span></div>
+          </div>
+          <div class="mention-card">
+            <div class="mention-card-name">Rainier Restaurant</div>
+            <div class="mention-card-note">Top pick among newer workers (1–3 yrs)</div>
+            <div class="mention-tags"><span class="mention-tag">Newer workers</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 06 — WHO PICKS WHAT: BY ROLE
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">06 / 11 — Who Picks What: By Role</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide" style="background:var(--white);">
+      <div class="slide-inner" style="align-items:center; text-align:center; justify-content:center;">
+
+        <div class="section-kicker" style="color:var(--ink-light); font-size:18px;">Favorites broken down by role</div>
+        <div class="section-headline" style="font-size:76px; margin-bottom:12px;">Depends who<br>you ask.</div>
+        <div class="section-sub" style="margin-bottom:36px; font-size:22px;">Chefs, servers, and owners don't always agree.</div>
+
+        <div class="role-grid-full" style="width:100%;">
+          <div class="role-card">
+            <div class="role-card-header">
+              <span class="role-card-header-name">Chef / Kitchen</span>
+              <span class="role-card-header-count">27 respondents</span>
+            </div>
+            <div class="role-card-body">
+              <div class="role-pick-item"><div class="role-pick-rank">1st</div><div class="role-pick-name">Pancita</div><div class="role-pick-score">9 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">2nd</div><div class="role-pick-name">Hamdi</div><div class="role-pick-score">8 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">3rd</div><div class="role-pick-name">Pho Bac</div><div class="role-pick-score">7 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">4th</div><div class="role-pick-name">L'Oursin</div><div class="role-pick-score">6 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">5th</div><div class="role-pick-name">Atoma</div><div class="role-pick-score">5 pts</div></div>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <span class="role-card-header-name">Front of House</span>
+              <span class="role-card-header-count">14 respondents</span>
+            </div>
+            <div class="role-card-body">
+              <div class="role-pick-item"><div class="role-pick-rank">1st</div><div class="role-pick-name">L'Oursin</div><div class="role-pick-score">9 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">2nd</div><div class="role-pick-name">Kilig</div><div class="role-pick-score">7 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">3rd</div><div class="role-pick-name">Cafe Suliman</div><div class="role-pick-score">5 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">4th</div><div class="role-pick-name">Homer</div><div class="role-pick-score">4 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">5th</div><div class="role-pick-name">Lenox</div><div class="role-pick-score">3 pts</div></div>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-card-header">
+              <span class="role-card-header-name">Owner / GM</span>
+              <span class="role-card-header-count">18 respondents</span>
+            </div>
+            <div class="role-card-body">
+              <div class="role-pick-item"><div class="role-pick-rank">1st</div><div class="role-pick-name">Ltd Edition Sushi</div><div class="role-pick-score">6 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">2nd</div><div class="role-pick-name">Lenox</div><div class="role-pick-score">5 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">3rd</div><div class="role-pick-name">Pancita</div><div class="role-pick-score">4 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">4th</div><div class="role-pick-name">L'Oursin</div><div class="role-pick-score">4 pts</div></div>
+              <div class="role-pick-item"><div class="role-pick-rank">5th</div><div class="role-pick-name">Pho Bac</div><div class="role-pick-score">3 pts</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-box" style="width:100%; margin-top:24px; text-align:left;">
+          <div class="insight-label">Notable pattern</div>
+          <div class="insight-text">Chefs eat at Pancita. FOH drinks at L'Oursin. Owners trust Ltd Edition Sushi. Each group has a clear north star.</div>
+        </div>
+
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 07 — WHO PICKS WHAT: BY EXPERIENCE
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">07 / 11 — Who Picks What: By Experience</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide" style="background:var(--white);">
+      <div class="slide-inner" style="align-items:center; text-align:center; justify-content:center;">
+
+        <div class="section-kicker" style="color:var(--ink-light); font-size:18px;">Favorites broken down by years in industry</div>
+        <div class="section-headline" style="font-size:72px; margin-bottom:12px;">Experience<br>changes taste.</div>
+        <div class="section-sub" style="margin-bottom:36px; font-size:22px;">What veterans swear by, newer workers are still discovering.</div>
+
+        <div class="exp-grid-full" style="width:100%;">
+          <div class="exp-card">
+            <div class="exp-card-header">
+              <div class="exp-card-label">Veterans</div>
+              <div class="exp-card-range">11+ years</div>
+              <div class="exp-card-count">40 respondents</div>
+            </div>
+            <div class="exp-card-body">
+              <div class="exp-pick-item"><div class="exp-pick-rank">1st</div><div class="exp-pick-name">L'Oursin</div><div class="exp-pick-score">13 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">2nd</div><div class="exp-pick-name">Pho Bac</div><div class="exp-pick-score">10 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">3rd</div><div class="exp-pick-name">Hamdi</div><div class="exp-pick-score">9 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">4th</div><div class="exp-pick-name">Pancita</div><div class="exp-pick-score">7 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">5th</div><div class="exp-pick-name">Le Pichet</div><div class="exp-pick-score">6 pts</div></div>
+            </div>
+          </div>
+          <div class="exp-card">
+            <div class="exp-card-header">
+              <div class="exp-card-label">Mid-career</div>
+              <div class="exp-card-range">4–10 years</div>
+              <div class="exp-card-count">20 respondents</div>
+            </div>
+            <div class="exp-card-body">
+              <div class="exp-pick-item"><div class="exp-pick-rank">1st</div><div class="exp-pick-name">Lenox</div><div class="exp-pick-score">8 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">2nd</div><div class="exp-pick-name">Pancita</div><div class="exp-pick-score">7 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">3rd</div><div class="exp-pick-name">Kilig</div><div class="exp-pick-score">5 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">4th</div><div class="exp-pick-name">Homer</div><div class="exp-pick-score">4 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">5th</div><div class="exp-pick-name">L'Oursin</div><div class="exp-pick-score">3 pts</div></div>
+            </div>
+          </div>
+          <div class="exp-card">
+            <div class="exp-card-header">
+              <div class="exp-card-label">Newer workers</div>
+              <div class="exp-card-range">1–3 years</div>
+              <div class="exp-card-count">6 respondents</div>
+            </div>
+            <div class="exp-card-body">
+              <div class="exp-pick-item"><div class="exp-pick-rank">1st</div><div class="exp-pick-name">Ltd Edition Sushi</div><div class="exp-pick-score">3 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">1st</div><div class="exp-pick-name">Rainier Restaurant</div><div class="exp-pick-score">3 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">1st</div><div class="exp-pick-name">Honey Court</div><div class="exp-pick-score">3 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">4th</div><div class="exp-pick-name">Communion</div><div class="exp-pick-score">2 pts</div></div>
+              <div class="exp-pick-item"><div class="exp-pick-rank">4th</div><div class="exp-pick-name">Homer</div><div class="exp-pick-score">2 pts</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-box" style="width:100%; margin-top:24px; text-align:left;">
+          <div class="insight-label">Notable pattern</div>
+          <div class="insight-text">Veterans converge on a clear consensus. Newer workers are three-way tied — still building their city map.</div>
+        </div>
+
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SLIDES 08–11 — PHOTO PLACEHOLDERS
+══════════════════════════════════════ -->
+<div>
+  <div class="slide-label">08 / 11 — Photo</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide photo-slide">
+      <div class="photo-placeholder">
+        <div class="photo-placeholder-num">08 / 11</div>
+        <div class="photo-placeholder-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="28" height="22" rx="2" stroke="white" stroke-width="1.5"/><circle cx="16" cy="17" r="6" stroke="white" stroke-width="1.5"/><path d="M11 6l2-4h6l2 4" stroke="white" stroke-width="1.5"/></svg></div>
+        <div class="photo-placeholder-label">Photo — place here</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="slide-label">09 / 11 — Photo</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide photo-slide">
+      <div class="photo-placeholder">
+        <div class="photo-placeholder-num">09 / 11</div>
+        <div class="photo-placeholder-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="28" height="22" rx="2" stroke="white" stroke-width="1.5"/><circle cx="16" cy="17" r="6" stroke="white" stroke-width="1.5"/><path d="M11 6l2-4h6l2 4" stroke="white" stroke-width="1.5"/></svg></div>
+        <div class="photo-placeholder-label">Photo — place here</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="slide-label">10 / 11 — Photo</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide photo-slide">
+      <div class="photo-placeholder">
+        <div class="photo-placeholder-num">10 / 11</div>
+        <div class="photo-placeholder-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="28" height="22" rx="2" stroke="white" stroke-width="1.5"/><circle cx="16" cy="17" r="6" stroke="white" stroke-width="1.5"/><path d="M11 6l2-4h6l2 4" stroke="white" stroke-width="1.5"/></svg></div>
+        <div class="photo-placeholder-label">Photo — place here</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div>
+  <div class="slide-label">11 / 11 — Photo</div>
+  <div class="slide-container"><div class="slide-wrap">
+    <div class="slide photo-slide">
+      <div class="photo-placeholder">
+        <div class="photo-placeholder-num">11 / 11</div>
+        <div class="photo-placeholder-icon"><svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="28" height="22" rx="2" stroke="white" stroke-width="1.5"/><circle cx="16" cy="17" r="6" stroke="white" stroke-width="1.5"/><path d="M11 6l2-4h6l2 4" stroke="white" stroke-width="1.5"/></svg></div>
+        <div class="photo-placeholder-label">Photo — place here</div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+</body>
+</html>
